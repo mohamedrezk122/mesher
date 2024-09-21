@@ -1,5 +1,4 @@
 #include "../include/model.hpp"
-#include <cstdlib>
 
 Model::Model(std::string filepath) {
     trans_vector = glm::vec3(0.0f);

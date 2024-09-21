@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iterator>
 #include <vector>
 
 #include <assimp/Importer.hpp>

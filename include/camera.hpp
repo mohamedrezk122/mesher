@@ -1,5 +1,7 @@
 #pragma once
 
+#include <SDL2/SDL_events.h>
+#include <SDL2/SDL_keycode.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/dual_quaternion.hpp>
 #include <glm/gtx/rotate_vector.hpp>
@@ -45,20 +47,22 @@ public:
         view_matrix = glm::lookAt(pos, target, up);
     }
 
-    void handle_key_action(Action action, float dt) {
+    void handle_key_action(SDL_Keycode action, float dt) {
         // TODO: compute dt properly with fps
         switch (action) {
-        case FORWARD:
+        case SDLK_UP:
             pos += view_direction * SPEED * dt;
             break;
-        case BACKWARD:
+        case SDLK_DOWN:
             pos -= view_direction * SPEED * dt;
             break;
-        case RIGHT:
+        case SDLK_RIGHT:
             pos += right * SPEED * dt;
             break;
-        case LEFT:
+        case SDLK_LEFT:
             pos -= right * SPEED * dt;
+            break;
+        default:
             break;
         }
         update_vectors();

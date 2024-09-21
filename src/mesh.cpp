@@ -1,5 +1,3 @@
-#include <glm/gtc/matrix_transform.hpp>
-
 #include "../include/mesh.hpp"
 
 Mesh::Mesh(std::vector<Vertex> _vertices, std::vector<GLuint> _indices) {

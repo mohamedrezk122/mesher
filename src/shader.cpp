@@ -1,14 +1,8 @@
-#include <cstdlib>
-
 #include "../include/shader.hpp"
 
 std::string Shader::read_shader_from_file(const char *filepath) {
     std::fstream file(filepath, std::fstream::in);
-
-    if (!file.is_open()) {
-        std::cerr << "Cannot open file" << std::endl;
-        return "";
-    }
+    assert(file.is_open() && "cannot open shader file");
     std::string contents = "";
     std::string line = "";
     while (!file.eof()) {

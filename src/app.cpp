@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-#include <vector>
 #include <filesystem>
 
 #include <SDL2/SDL.h>
@@ -18,26 +17,41 @@
 
 namespace fs = std::filesystem;
 
+const fs::path this_filepath =  __FILE__;
+const fs::path ROOT = this_filepath.parent_path().parent_path();
+
 int WIDTH = 1200;
 int HEIGHT = 900;
+bool QUIT = false;
 
 SDL_Window *WINDOW = nullptr;
 SDL_DisplayMode DM;
 SDL_GLContext GL_CONTEXT = nullptr;
-bool QUIT = false;
 
 Shader shader;
 Model model;
-Camera camera(glm::vec3(1.0f, 2.0f, 2.0f), // pos of camera
-              glm::vec3(0.0f, 0.0f, 0.0f)  // where camera is looking
+Camera camera(
+    glm::vec3(1.0f, 2.0f, 2.0f), // pos of camera
+    glm::vec3(0.0f, 0.0f, 0.0f)  // where camera is looking
 );
 
-void print_opengl_info() {
+// model matrix
+glm::mat4 MODEL;
+// projection matrix
+glm::mat4 PROJ;
+// camera transform matrix 
+glm::mat4 VIEW;
+
+// projection matrix parameters
+float FOV = 45.0f; // field of view
+float NEAR_CLIP = 0.01f; 
+float FAR_CLIP = 10.0f; 
+
+static void print_opengl_info() {
     std::cout << "Vendor: " << glGetString(GL_VENDOR) << std::endl;
     std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
     std::cout << "Version: " << glGetString(GL_VERSION) << std::endl;
-    std::cout << "Shading language version: "
-              << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+    std::cout << "Shading: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 }
 
 void initialize_program() {
@@ -57,31 +71,29 @@ void initialize_program() {
                               SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT,
                               SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (WINDOW == nullptr) {
-        std::cout << "Cannot create window" << std::endl;
+        std::cerr << "Cannot create window" << std::endl;
         exit(EXIT_FAILURE);
     }
 
     GL_CONTEXT = SDL_GL_CreateContext(WINDOW);
     if (GL_CONTEXT == nullptr) {
-        std::cout << "Cannot create opengl context, exiting" << std::endl;
+        std::cerr << "Cannot create opengl context, exiting" << std::endl;
         exit(EXIT_FAILURE);
     }
 
     if (!gladLoadGLLoader(SDL_GL_GetProcAddress)) {
-        std::cout << "glad is not initialized, exiting" << std::endl;
+        std::cerr << "glad is not initialized, exiting" << std::endl;
         exit(EXIT_FAILURE);
     }
     print_opengl_info();
     SDL_SetWindowFullscreen(WINDOW, SDL_FALSE);
 
     // Load shaders
-    fs::path this_filepath =  __FILE__;
-    fs::path project_path = this_filepath.parent_path().parent_path();
-    fs::path vertex_shader_path = project_path / "shaders/vertex_shader.glsl";
-    fs::path fragment_shader_path = project_path / "shaders/fragment_shader.glsl";
+    fs::path vertex_shader_path = ROOT / "shaders/vertex_shader.glsl";
+    fs::path fragment_shader_path = ROOT / "shaders/fragment_shader.glsl";
     if(!fs::exists(vertex_shader_path) || !fs::exists(fragment_shader_path)){
         std::cerr << "Could not find shaders path" << std::endl;
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     shader = Shader(vertex_shader_path.c_str(), fragment_shader_path.c_str());
 }
@@ -92,46 +104,24 @@ void handle_input() {
     static int ypos = HEIGHT / 2;
     static bool clicked = false;
     while (SDL_PollEvent(&event) != 0) {
-        switch (event.type) {
-        case SDL_QUIT:
+        if (event.type == SDL_QUIT){
             QUIT = true;
             return;
-        case SDL_DROPFILE:
+        }
+        else if (event.type == SDL_DROPFILE){
             std::cout << event.drop.file << std::endl;
             model = Model(std::string(event.drop.file));
-            break;
-        case SDL_KEYDOWN:
-            switch (event.key.keysym.sym) {
-            case SDLK_LEFT:
-                camera.handle_key_action(LEFT, 0.1f);
-                break;
-            case SDLK_RIGHT:
-                camera.handle_key_action(RIGHT, 0.1f);
-                break;
-            case SDLK_UP:
-                camera.handle_key_action(FORWARD, 0.1f);
-                break;
-            case SDLK_DOWN:
-                camera.handle_key_action(BACKWARD, 0.1f);
-                break;
-            default:
-                break;
-            }
-        case SDL_MOUSEBUTTONDOWN:
-            clicked = true;
-            break;
-        case SDL_MOUSEBUTTONUP:
-            clicked = false;
-            break;
-        case SDL_MOUSEMOTION:
-            if (!clicked)
-                break;
+        }
+        else if (event.type == SDL_KEYDOWN)
+            camera.handle_key_action(event.key.keysym.sym, 0.1f);
+        else if (event.type == SDL_MOUSEBUTTONUP || event.type == SDL_MOUSEBUTTONDOWN)
+            clicked = (event.type ==  SDL_MOUSEBUTTONDOWN);
+
+        else if (event.type == SDL_MOUSEMOTION){
+            if (!clicked) continue;
             xpos = event.motion.xrel;
             ypos = event.motion.yrel;
             camera.handle_mouse_action(xpos, ypos);
-            break;
-        default:
-            break;
         }
     }
 }
@@ -156,19 +146,20 @@ void pre_draw() {
     glPolygonMode(GL_BACK, GL_LINE);
 
     shader.use();
-    glm::mat4 model_matrix = model.get_model_matrix();
-    glm::mat4 proj_matrix = glm::perspective(
-        glm::radians(45.0f), (float) WIDTH / (float) HEIGHT, 0.1f, 10.0f);
+    MODEL = model.get_model_matrix();
+    PROJ  = glm::perspective(
+        glm::radians(FOV), (float) WIDTH / (float) HEIGHT, NEAR_CLIP, FAR_CLIP);
+    VIEW = camera.get_view_matrix();
 
-    glm::mat4 view_matrix = camera.get_view_matrix();
-    glm::vec3 light_source_pos1 = glm::vec3(0.0f, 2.0f, 3.0f);
-    glm::vec3 light_source_pos2 = -1 * light_source_pos1;
+    glm::vec3 light_source1 = glm::vec3(0.0f, 2.0f, 3.0f);
+    glm::vec3 light_source2 = -1 * light_source1;
 
-    shader.set_uniform("u_Proj", proj_matrix);
-    shader.set_uniform("u_Model", model_matrix);
-    shader.set_uniform("u_View", view_matrix);
-    shader.set_uniform("u_LightSource1", light_source_pos1);
-    shader.set_uniform("u_LightSource2", light_source_pos2);
+    shader.set_uniform("u_Proj", PROJ);
+    shader.set_uniform("u_Model", MODEL);
+    shader.set_uniform("u_View", VIEW);
+
+    shader.set_uniform("u_LightSource1", light_source1);
+    shader.set_uniform("u_LightSource2", light_source2);
 }
 
 void main_loop() {
@@ -187,7 +178,7 @@ void cleanup() {
 
 int main(int argc, char *argv[]) {
     initialize_program();
-    // read files from command lines
+    // read files from command line
     if (argc > 1) {
         model = Model(std::string(argv[1]));
     }
