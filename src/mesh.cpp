@@ -1,8 +1,8 @@
 #include "../include/mesh.hpp"
 
-Mesh::Mesh(std::vector<Vertex> _vertices, std::vector<GLuint> _indices) {
+Mesh::Mesh(std::vector<Vertex> _vertices, std::vector<GLuint> _faces) {
     vertices = _vertices;
-    indices = _indices;
+    faces = _faces;
     // initialize with identity
     model_matrix = glm::mat4(1.0f);
     setup_mesh();
@@ -38,14 +38,14 @@ void Mesh::setup_mesh() {
     // setup element buffer object
     glGenBuffers(1, &EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indices.size(),
-                 indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * faces.size(),
+                 faces.data(), GL_STATIC_DRAW);
 }
 
 void Mesh::draw(Shader &shader) {
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, faces.size(), GL_UNSIGNED_INT, 0);
 }
 
 Mesh Mesh::scale(float s) {

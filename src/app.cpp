@@ -1,3 +1,4 @@
+#include <SDL2/SDL_timer.h>
 #include <iostream>
 #include <string>
 #include <filesystem>
@@ -112,8 +113,9 @@ void handle_input() {
             std::cout << event.drop.file << std::endl;
             model = Model(std::string(event.drop.file));
         }
-        else if (event.type == SDL_KEYDOWN)
-            camera.handle_key_action(event.key.keysym.sym, 0.1f);
+        else if (event.type == SDL_KEYDOWN){
+            camera.handle_key_action(event.key.keysym.sym, 0.05f);
+        }
         else if (event.type == SDL_MOUSEBUTTONUP || event.type == SDL_MOUSEBUTTONDOWN)
             clicked = (event.type ==  SDL_MOUSEBUTTONDOWN);
 
@@ -163,11 +165,22 @@ void pre_draw() {
 }
 
 void main_loop() {
+    uint64_t start, end, count = 0;
+    float elapsed;
     while (!QUIT) {
+        start = SDL_GetPerformanceCounter();
         handle_input();
         pre_draw();
         model.draw(shader);
         SDL_GL_SwapWindow(WINDOW);
+        // print FPS every every 5 rounds
+        if (count == 5){
+            end = SDL_GetPerformanceCounter();
+            elapsed = (end-start)/ (float) SDL_GetPerformanceFrequency();
+            std::cout << "FPS: "<< std::to_string(1.0f/elapsed) << std::endl;
+            count = 0;
+        }
+        count += 1;
     }
 }
 

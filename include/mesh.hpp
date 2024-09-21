@@ -8,20 +8,21 @@
 #include "glad.h"
 #include "shader.hpp"
 
-struct Vertex {
-    glm::vec3 position;
-    glm::vec3 color;
-    glm::vec3 normal;
-};
-
 class Mesh {
   public:
+
+    struct Vertex {
+        glm::vec3 position;
+        glm::vec3 color;
+        glm::vec3 normal;
+    };
+
     std::vector<Vertex> vertices;
-    std::vector<GLuint> indices;
+    std::vector<GLuint> faces;
     glm::mat4 model_matrix;
 
     // constructor
-    Mesh(std::vector<Vertex> _vertices, std::vector<GLuint> _indcies);
+    Mesh(std::vector<Vertex> _vertices, std::vector<GLuint> faces);
 
     void draw(Shader &shader);
 

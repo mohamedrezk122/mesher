@@ -20,7 +20,6 @@ class Model {
     void draw(Shader &shader);
 
     glm::mat4 model_matrix;
-    glm::vec3 trans_vector;
 
     glm::mat4 get_model_matrix();
     Model scale(float s);
@@ -28,10 +27,6 @@ class Model {
 
     Model translate(float t);
     Model translate(glm::vec3 t);
-
-    Model translate_x(float dx);
-    Model translate_y(float dy);
-    Model translate_z(float dz);
 
     Model rotate(float angle, glm::vec3 axis);
 

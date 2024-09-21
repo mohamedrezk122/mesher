@@ -1,15 +1,12 @@
 #include "../include/model.hpp"
 
 Model::Model(std::string filepath) {
-    trans_vector = glm::vec3(0.0f);
     model_matrix = glm::mat4(1.0f);
     Assimp::Importer importer;
     const aiScene *scene =
         importer.ReadFile(filepath, aiProcess_Triangulate | aiProcess_FlipUVs);
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE ||
-        !scene->mRootNode) {
-        std::cerr << "ERROR::ASSIMP::" << importer.GetErrorString()
-                  << std::endl;
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+        std::cerr << "ERROR::ASSIMP::" << importer.GetErrorString() << std::endl;
         return;
     }
     process_node(scene->mRootNode, scene);
@@ -19,13 +16,13 @@ Model::Model(std::string filepath) {
 }
 
 void Model::process_node(aiNode *node, const aiScene *scene) {
-    for (unsigned int i = 0; i < node->mNumMeshes; i++) {
-        unsigned int index = node->mMeshes[i];
+    for (uint32_t i = 0; i < node->mNumMeshes; i++) {
+        uint32_t index = node->mMeshes[i];
         aiMesh *mesh = scene->mMeshes[index];
         process_mesh(mesh, scene);
     }
     // recursively process nodes
-    for (unsigned int i = 0; i < node->mNumChildren; i++) {
+    for (uint32_t i = 0; i < node->mNumChildren; i++) {
         aiNode *child = node->mChildren[i];
         process_node(child, scene);
     }
@@ -33,49 +30,49 @@ void Model::process_node(aiNode *node, const aiScene *scene) {
 
 void Model::process_mesh(aiMesh *mesh, const aiScene *scene) {
     glm::vec3 bounding_box(0.0f);
-    std::vector<Vertex> vertices;
+    std::vector<Mesh::Vertex> vertices;
     vertices.reserve(mesh->mNumVertices + 1);
-    for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-        auto vec = mesh->mVertices[i];
+    for (uint32_t i = 0; i < mesh->mNumVertices; i++) {
+        const auto vec = mesh->mVertices[i];
 
         bounding_box.x = std::max(std::abs(vec.x), bounding_box.x);
         bounding_box.y = std::max(std::abs(vec.y), bounding_box.y);
         bounding_box.z = std::max(std::abs(vec.z), bounding_box.z);
 
-        vertices.push_back(Vertex{
+        vertices.push_back(Mesh::Vertex{
             .position = glm::vec3(vec.x, vec.y, vec.z),
             .color = glm::vec3(0.753f),
             .normal = glm::vec3(0.0f),
         });
     }
 
-    std::vector<unsigned int> indices;
-    for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
+    std::vector<GLuint> faces;
+    faces.reserve(mesh->mNumFaces * 3 + 1);
+    for (uint32_t i = 0; i < mesh->mNumFaces; i++) {
         aiFace face = mesh->mFaces[i];
-        if (face.mNumIndices > 3)
-            std::cout << face.mNumIndices << std::endl;
-        for (unsigned int j = 0; j < face.mNumIndices; j++) {
-            indices.push_back(face.mIndices[j]);
-        }
+        assert(face.mNumIndices == 3); 
+        faces.push_back(face.mIndices[0]);
+        faces.push_back(face.mIndices[1]);
+        faces.push_back(face.mIndices[2]);
     }
 
     // calculating vertex normals
-    for (uint32_t i = 0; i < indices.size(); i += 3) {
+    glm::vec3 A, B, C, normal;
+    for (uint32_t i = 0; i < faces.size(); i += 3) {
+        A = vertices[faces[i + 0]].position;
+        B = vertices[faces[i + 1]].position;
+        C = vertices[faces[i + 2]].position;
 
-        glm::vec3 A = vertices[indices[i + 0]].position;
-        glm::vec3 B = vertices[indices[i + 1]].position;
-        glm::vec3 C = vertices[indices[i + 2]].position;
-
-        glm::vec3 normal = glm::cross(B - A, C - A);
-
-        vertices[indices[i + 0]].normal += normal;
-        vertices[indices[i + 1]].normal += normal;
-        vertices[indices[i + 2]].normal += normal;
+        normal = glm::cross(B - A, C - A);
+        
+        vertices[faces[i + 0]].normal += normal;
+        vertices[faces[i + 1]].normal += normal;
+        vertices[faces[i + 2]].normal += normal;
     }
 
     auto ratio = 1.45f / std::max(bounding_box.x,
                                   std::max(bounding_box.y, bounding_box.z));
-    Mesh mymesh(vertices, indices);
+    Mesh mymesh(vertices, faces);
     mymesh = mymesh.scale(ratio);
     // center mesh
     mymesh = mymesh.translate(ratio * bounding_box / 2.0f);
@@ -104,21 +101,6 @@ Model Model::translate(float t) {
 Model Model::translate(glm::vec3 t) {
     model_matrix = glm::translate(model_matrix, t);
     return *this;
-}
-
-Model Model::translate_x(float dx) {
-    trans_vector.x += dx;
-    return translate(trans_vector);
-}
-
-Model Model::translate_y(float dy) {
-    trans_vector.y += dy;
-    return translate(trans_vector);
-}
-
-Model Model::translate_z(float dz) {
-    trans_vector.z += dz;
-    return translate(trans_vector);
 }
 
 Model Model::rotate(float angle, glm::vec3 axis) {
