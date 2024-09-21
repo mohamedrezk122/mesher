@@ -1,9 +1,15 @@
 #pragma once
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/extended_min_max.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 #include <vector>
+
+#include <assimp/Importer.hpp>
+#include <assimp/mesh.h>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
 
 #include "glad.h"
 #include "shader.hpp"
@@ -19,10 +25,14 @@ class Mesh {
 
     std::vector<Vertex> vertices;
     std::vector<GLuint> faces;
-    glm::mat4 model_matrix;
+    // initialize with identity
+    glm::mat4 model_matrix{1.0f};
+    glm::vec3 bounding_box{0.0f};
 
-    // constructor
+    // constructors
     Mesh(std::vector<Vertex> _vertices, std::vector<GLuint> faces);
+    Mesh(std::string filepath);
+    Mesh(){}
 
     void draw(Shader &shader);
 

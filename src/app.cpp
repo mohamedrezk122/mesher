@@ -13,7 +13,7 @@
 
 #include "../include/camera.hpp"
 #include "../include/glad.h"
-#include "../include/model.hpp"
+#include "../include/mesh.hpp"
 #include "../include/shader.hpp"
 
 namespace fs = std::filesystem;
@@ -30,7 +30,7 @@ SDL_DisplayMode DM;
 SDL_GLContext GL_CONTEXT = nullptr;
 
 Shader shader;
-Model model;
+Mesh mesh;
 Camera camera(
     glm::vec3(1.0f, 2.0f, 2.0f), // pos of camera
     glm::vec3(0.0f, 0.0f, 0.0f)  // where camera is looking
@@ -111,7 +111,7 @@ void handle_input() {
         }
         else if (event.type == SDL_DROPFILE){
             std::cout << event.drop.file << std::endl;
-            model = Model(std::string(event.drop.file));
+            mesh = Mesh(std::string(event.drop.file));
         }
         else if (event.type == SDL_KEYDOWN){
             camera.handle_key_action(event.key.keysym.sym, 0.05f);
@@ -148,7 +148,7 @@ void pre_draw() {
     glPolygonMode(GL_BACK, GL_LINE);
 
     shader.use();
-    MODEL = model.get_model_matrix();
+    MODEL = mesh.get_model_matrix();
     PROJ  = glm::perspective(
         glm::radians(FOV), (float) WIDTH / (float) HEIGHT, NEAR_CLIP, FAR_CLIP);
     VIEW = camera.get_view_matrix();
@@ -171,7 +171,7 @@ void main_loop() {
         start = SDL_GetPerformanceCounter();
         handle_input();
         pre_draw();
-        model.draw(shader);
+        mesh.draw(shader);
         SDL_GL_SwapWindow(WINDOW);
         // print FPS every every 5 rounds
         if (count == 5){
@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
     initialize_program();
     // read files from command line
     if (argc > 1) {
-        model = Model(std::string(argv[1]));
+        mesh = Mesh(std::string(argv[1]));
     }
     main_loop();
     cleanup();
