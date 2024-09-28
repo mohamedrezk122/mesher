@@ -33,8 +33,6 @@ GLuint Shader::setup_shader(const char *filepath, const GLuint shader_type) {
     return shader;
 }
 
-Shader::Shader() {}
-
 Shader::Shader(const char *v_shader_path, const char *f_shader_path) {
     int success;
     char infoLog[512];

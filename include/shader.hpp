@@ -4,14 +4,13 @@
 #include <iostream>
 #include <string>
 
-#include <glm/mat4x4.hpp> // glm::mat4
+#include <glm/mat4x4.hpp>
 
 #include "glad.h"
 
 class Shader {
   public:
-    // constructors
-    Shader();
+    Shader() = default;
     Shader(const char *vertex_shader_path, const char *fragment_shader_path);
 
     std::string read_shader_from_file(const char *filepath);
