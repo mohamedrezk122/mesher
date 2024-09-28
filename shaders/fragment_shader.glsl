@@ -1,7 +1,7 @@
 // Mesh/object fragment shader
 #version 460 core
 in vec3 v_pos;
-in vec3 v_color;
+in vec4 v_color;
 in vec3 v_normal;
 out vec4 color;
 
@@ -28,5 +28,5 @@ void main(){
     vec3 result; 
     result = compute_pixel_light(u_LightSource1);
     result += compute_pixel_light(u_LightSource2);
-    color = vec4(result * v_color, 1.0f);
+    color = vec4(result * v_color.xyz, v_color.w);
 }
