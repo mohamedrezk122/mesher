@@ -14,25 +14,39 @@
 #include "glad.h"
 #include "shader.hpp"
 
+// axis-aligned bounding box
+struct AABB {
+    glm::vec3 max;
+    glm::vec3 min;
+};
+
+struct Triangle {
+    glm::vec3 v1;
+    glm::vec3 v2;
+    glm::vec3 v3;
+    glm::vec3 normal;
+};
+
 class Mesh {
   public:
-
     struct Vertex {
         glm::vec3 position;
-        glm::vec3 color;
+        glm::vec4 color;
         glm::vec3 normal;
     };
 
+    glm::vec3 center;
+    std::vector<Triangle> triangles;
     std::vector<Vertex> vertices;
     std::vector<GLuint> faces;
     // initialize with identity
     glm::mat4 model_matrix{1.0f};
-    glm::vec3 bounding_box{0.0f};
+    AABB bounding_box{glm::vec3(0.0f), glm::vec3(0.0f)};
 
     // constructors
     Mesh(std::vector<Vertex> _vertices, std::vector<GLuint> faces);
     Mesh(std::string filepath);
-    Mesh(){}
+    Mesh() = default;
 
     void draw(Shader &shader);
 
@@ -48,3 +62,6 @@ class Mesh {
     GLuint VAO, VBO, EBO;
     void setup_mesh();
 };
+
+Mesh Mesh_bounding_box(Mesh &mesh);
+Mesh highlight_triangle(Triangle &tri);
