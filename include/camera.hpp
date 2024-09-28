@@ -2,19 +2,22 @@
 
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keycode.h>
+#include <glm/ext.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/dual_quaternion.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
+#include <iostream>
 
-const float SPEED = 2.5f;
-const glm::vec3 WORLD_UP = glm::vec3(0.0f, 1.0f, 0.0f);
+#include "bvh.hpp"
+#include "glad.h"
+
+#define SPEED 2.5f
+#define WORLD_UP glm::vec3(0.0f, 1.0f, 0.0f)
 
 class Camera {
-private:
-    // camera position
-    glm::vec3 pos;
+  private:
     glm::vec3 target;
     // unit vector at which the camera is looking at
     glm::vec3 view_direction;
@@ -22,10 +25,12 @@ private:
     glm::vec3 up;
     // camera right direction
     glm::vec3 right;
-
     glm::mat4 view_matrix;
 
-public:
+  public:
+    // camera position
+    glm::vec3 pos;
+
     Camera(glm::vec3 _pos, glm::vec3 _target) {
         target = _target;
         pos = _pos;
@@ -55,6 +60,15 @@ public:
         case SDLK_LEFT:
             pos -= right * SPEED * dt;
             break;
+        case SDLK_y:
+            reset_to_y();
+            break;
+        case SDLK_x:
+            reset_to_x();
+            break;
+        case SDLK_z:
+            reset_to_z();
+            break;
         default:
             break;
         }
@@ -62,12 +76,19 @@ public:
     }
 
     void handle_mouse_action(int xpos, int ypos) {
-        // TODO: should be view_direction, but since target is at origin 
-        // so pos = view_direction 
-        pos = glm::rotateY(pos, glm::radians((float) -xpos*0.2f));
-        pos = glm::rotateX(pos, glm::radians((float) -ypos*0.2f));
+        // TODO: should be view_direction, but since target is at origin
+        // so pos = view_direction
+        pos = glm::rotateY(pos, glm::radians((float)-xpos * 0.2f));
+        pos = glm::rotateX(pos, glm::radians((float)-ypos * 0.2f));
+        // std::cout << glm::to_string(pos) << std::endl;
         update_vectors();
     }
+
+    void reset_to_x() { pos = glm::vec3(4.0f, 0.0f, 0.0f); }
+
+    void reset_to_y() { pos = glm::vec3(0.76f, 4.0f, 0.0f); }
+
+    void reset_to_z() { pos = glm::vec3(0.0f, 0.0f, 4.0f); }
 
     glm::vec3 get_pos() { return pos; }
     glm::mat4 get_view_matrix() { return view_matrix; }
