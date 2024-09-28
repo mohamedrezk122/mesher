@@ -1,4 +1,6 @@
-# Mesher: Fast 3D mesh viewer with OpenGL and SDL2
+# Mesher: Toy 3D triangular mesh viewer and editor with OpenGL and SDL2
+
+![](assets/pic.png)
 
 ## Installation
 Make sure you have the following installed
