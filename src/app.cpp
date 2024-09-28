@@ -86,15 +86,21 @@ void handle_input() {
             if (!mouse_state.first)
                 continue;
             // if (mouse_state.second){
-            uint32_t start = SDL_GetTicks();
+            std::chrono::steady_clock::time_point begin =
+                std::chrono::steady_clock::now();
             auto triangle_opt =
                 check_intersection(glm::vec2(event.motion.x, event.motion.y),
                                    ctx.get_viewport(), mesh, VIEW, PROJ);
             if (triangle_opt.has_value()) {
                 triangle = highlight_triangle(triangle_opt.value());
-                uint32_t end = SDL_GetTicks();
-                std::cout << "Took: " << (end - start) << "ms" << std::endl;
             }
+            std::chrono::steady_clock::time_point end =
+                std::chrono::steady_clock::now();
+            std::cout << "Took: "
+                      << std::chrono::duration_cast<std::chrono::microseconds>
+                            (end - begin)
+                             .count()
+                      << "[us]" << std::endl;
 
             //     continue;
             // }
