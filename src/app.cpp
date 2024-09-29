@@ -3,7 +3,6 @@
 #include <filesystem>
 #include <iostream>
 #include <string>
-#include <thread>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_events.h>
@@ -40,9 +39,9 @@ glm::mat4 PROJ;
 glm::mat4 VIEW;
 
 // projection matrix parameters
-float FOV = 45.0f; // field of view
-float NEAR_CLIP = 0.01f;
-float FAR_CLIP = 1000.0f;
+#define FOV 45.0f // field of view
+#define NEAR_CLIP 0.01f
+#define FAR_CLIP 1000.0f
 
 static void print_opengl_info() {
     std::cout << "Vendor: " << glGetString(GL_VENDOR) << std::endl;
@@ -66,6 +65,7 @@ void initialize_program() {
 }
 
 void handle_input() {
+    using namespace std::chrono;
     SDL_Event event;
     // clicked, is_left
     static auto mouse_state = std::make_pair<bool, bool>(false, 0);
@@ -81,33 +81,28 @@ void handle_input() {
         } else if (event.type == SDL_MOUSEBUTTONUP ||
                    event.type == SDL_MOUSEBUTTONDOWN) {
             mouse_state.first = (event.type == SDL_MOUSEBUTTONDOWN);
-            mouse_state.second = SDL_BUTTON(SDL_BUTTON_LEFT);
+            mouse_state.second =event.button.button == SDL_BUTTON_LEFT;
         } else if (event.type == SDL_MOUSEMOTION) {
             if (!mouse_state.first)
                 continue;
-            // if (mouse_state.second){
-            std::chrono::steady_clock::time_point begin =
-                std::chrono::steady_clock::now();
+            // right is clicked
+            if (!mouse_state.second){
+                int xpos = event.motion.xrel;
+                int ypos = event.motion.yrel;
+                camera.handle_mouse_action(xpos, ypos);
+                continue;
+            }
+            steady_clock::time_point begin = steady_clock::now();
             auto triangle_opt =
                 check_intersection(glm::vec2(event.motion.x, event.motion.y),
                                    ctx.get_viewport(), mesh, VIEW, PROJ);
             if (triangle_opt.has_value()) {
                 triangle = highlight_triangle(triangle_opt.value());
             }
-            std::chrono::steady_clock::time_point end =
-                std::chrono::steady_clock::now();
+            steady_clock::time_point end = steady_clock::now();
             std::cout << "Took: "
-                      << std::chrono::duration_cast<std::chrono::microseconds>
-                            (end - begin)
-                             .count()
+                      << duration_cast<microseconds> (end - begin).count()
                       << "[us]" << std::endl;
-
-            //     continue;
-            // }
-            // // right is clicked
-            // int xpos = event.motion.xrel;
-            // int ypos = event.motion.yrel;
-            // camera.handle_mouse_action(xpos, ypos);
         }
     }
 }
