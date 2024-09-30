@@ -81,12 +81,12 @@ void handle_input() {
         } else if (event.type == SDL_MOUSEBUTTONUP ||
                    event.type == SDL_MOUSEBUTTONDOWN) {
             mouse_state.first = (event.type == SDL_MOUSEBUTTONDOWN);
-            mouse_state.second =event.button.button == SDL_BUTTON_LEFT;
+            mouse_state.second = event.button.button == SDL_BUTTON_LEFT;
         } else if (event.type == SDL_MOUSEMOTION) {
             if (!mouse_state.first)
                 continue;
             // right is clicked
-            if (!mouse_state.second){
+            if (!mouse_state.second) {
                 int xpos = event.motion.xrel;
                 int ypos = event.motion.yrel;
                 camera.handle_mouse_action(xpos, ypos);
@@ -97,11 +97,11 @@ void handle_input() {
                 check_intersection(glm::vec2(event.motion.x, event.motion.y),
                                    ctx.get_viewport(), mesh, VIEW, PROJ);
             if (triangle_opt.has_value()) {
-                triangle = highlight_triangle(triangle_opt.value());
+                triangle = mesh.highlight_triangle(triangle_opt.value());
             }
             steady_clock::time_point end = steady_clock::now();
             std::cout << "Took: "
-                      << duration_cast<microseconds> (end - begin).count()
+                      << duration_cast<microseconds>(end - begin).count()
                       << "[us]" << std::endl;
         }
     }
@@ -174,7 +174,6 @@ int main(int argc, char *argv[]) {
     if (argc > 1) {
         mesh = Mesh(std::string(argv[1]));
         std::cout << mesh.triangles.size() << std::endl;
-        triangle = highlight_triangle(mesh.triangles.at(0));
     }
     main_loop();
     return 0;
