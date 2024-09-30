@@ -21,9 +21,10 @@ Ray mouse_to_object_space(glm::vec2 mouse, glm::vec4 viewport,
 }
 
 // Möller–Trumbore intersection algorithm
-std::optional<float> Ray::intersects_triangle(const Triangle &tri) {
-    glm::vec3 edge1 = tri.v2 - tri.v1;
-    glm::vec3 edge2 = tri.v3 - tri.v1;
+std::optional<float> Ray::intersects_triangle(const Mesh &mesh, Triangle &tri) {
+    auto [v1, v2, v3] = mesh.get_triangle_vertices(tri);
+    glm::vec3 edge1 = v2 - v1;
+    glm::vec3 edge2 = v3 - v1;
     // the following two operation is the scalar triple product
     // which equals the determinant
     glm::vec3 d_cross_edge2 = cross(dir, edge2);
@@ -35,13 +36,14 @@ std::optional<float> Ray::intersects_triangle(const Triangle &tri) {
     // at this point the ray hits the plane of the triangle
     // we want to make sure whether it hits the triangle itself and where
     float inv_det = 1.0f / det;
-    glm::vec3 s = origin - tri.v1;
+    glm::vec3 s = origin - v1;
     float u = inv_det * dot(s, d_cross_edge2);
     // outside the triangle
     if (u < 0 || u > 1)
         return std::nullopt;
     glm::vec3 s_cross_edge1 = cross(s, edge1);
     float v = inv_det * dot(dir, s_cross_edge1);
+    // not valid barycentric coordinates range
     if (v < 0 || u + v > 1)
         return std::nullopt;
     float t = inv_det * dot(s_cross_edge1, edge2);
@@ -138,7 +140,7 @@ std::optional<float> Ray::intersects_aabb_vectorized(const AABB &box) {
     complexity: still linear in number of triangles
 
 */
-std::optional<Triangle> check_intersection(glm::vec2 mouse, glm::vec4 viewport,
+std::optional<uint64_t> check_intersection(glm::vec2 mouse, glm::vec4 viewport,
                                            Mesh &mesh, glm::mat4 &view_matrix,
                                            glm::mat4 &proj) {
 
@@ -148,11 +150,13 @@ std::optional<Triangle> check_intersection(glm::vec2 mouse, glm::vec4 viewport,
     if (!ray.intersects_aabb(mesh.bounding_box).has_value()) {
         return std::nullopt;
     }
-    for (const auto &triangle : mesh.triangles) {
-        if (ray.intersects_triangle(triangle).has_value()) {
+    uint64_t idx = 0;
+    for (auto &triangle : mesh.triangles) {
+        if (ray.intersects_triangle(mesh, triangle).has_value()) {
             std::cout << "done" << std::endl;
-            return triangle;
+            return idx;
         }
+        idx++;
     }
     return std::nullopt;
 }

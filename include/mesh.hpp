@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/extended_min_max.hpp>
 #include <glm/mat4x4.hpp>
@@ -21,9 +22,9 @@ struct AABB {
 };
 
 struct Triangle {
-    glm::vec3 v1;
-    glm::vec3 v2;
-    glm::vec3 v3;
+    // index to Vertex in vertices
+    uint64_t id;
+    uint64_t first_vertex_idx;
     glm::vec3 normal;
 };
 
@@ -58,10 +59,12 @@ class Mesh {
     Mesh translate(glm::vec3 t);
     Mesh rotate(float angle, glm::vec3 axis);
 
+    Mesh highlight_triangle(uint64_t tri_idx);
+    Mesh construct_bounding_box();
+
+    std::array<glm::vec3, 3> get_triangle_vertices(Triangle &tri) const;
+
   private:
     GLuint VAO, VBO, EBO;
     void setup_mesh();
 };
-
-Mesh Mesh_bounding_box(Mesh &mesh);
-Mesh highlight_triangle(Triangle &tri);
