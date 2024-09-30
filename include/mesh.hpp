@@ -59,7 +59,7 @@ class Mesh {
     Mesh translate(glm::vec3 t);
     Mesh rotate(float angle, glm::vec3 axis);
 
-    Mesh highlight_triangle(uint64_t tri_idx);
+    Mesh highlight_triangle(uint32_t tri_idx);
     Mesh construct_bounding_box();
 
     std::array<glm::vec3, 3> get_triangle_vertices(Triangle &tri) const;

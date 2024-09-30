@@ -1,6 +1,6 @@
-#include "../include/bvh.hpp"
 #include <cfloat>
-#include <chrono>
+
+#include "../include/bvh.hpp"
 
 constexpr float EPSILON = std::numeric_limits<float>::epsilon();
 
@@ -140,7 +140,7 @@ std::optional<float> Ray::intersects_aabb_vectorized(const AABB &box) {
     complexity: still linear in number of triangles
 
 */
-std::optional<uint64_t> check_intersection(glm::vec2 mouse, glm::vec4 viewport,
+std::optional<uint32_t> check_intersection(glm::vec2 mouse, glm::vec4 viewport,
                                            Mesh &mesh, glm::mat4 &view_matrix,
                                            glm::mat4 &proj) {
 
@@ -157,3 +157,4 @@ std::optional<uint64_t> check_intersection(glm::vec2 mouse, glm::vec4 viewport,
     }
     return std::nullopt;
 }
+

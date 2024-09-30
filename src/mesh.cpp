@@ -1,6 +1,6 @@
 #include "../include/mesh.hpp"
 
-Mesh Mesh::highlight_triangle(uint64_t tri_idx) {
+Mesh Mesh::highlight_triangle(uint32_t tri_idx) {
     Triangle &tri = triangles[tri_idx];
     glm::vec4 color{1.0f, 0.0f, 0.0f, 1.0f};
     std::vector<Mesh::Vertex> vertices;
@@ -29,7 +29,7 @@ Mesh Mesh::construct_bounding_box() {
                                 6, 4, 2, 2, 4, 0, 3, 7, 1, 1, 7, 5};
 
     std::vector<Mesh::Vertex> vertices;
-    for (uint64_t i = 0; i < vertices_.size(); i += 3) {
+    for (uint32_t i = 0; i < vertices_.size(); i += 3) {
         vertices.push_back(Mesh::Vertex{
             glm::vec3(vertices_[i + 0], vertices_[i + 1], vertices_[i + 2]),
             glm::vec4(1.0f, 0.0f, 0.0f, 0.3f),
@@ -37,7 +37,7 @@ Mesh Mesh::construct_bounding_box() {
         });
     }
     glm::vec3 vec = glm::abs(box.max - box.min) * 0.5f;
-    for (uint64_t i = 0; i < vertices.size(); i++) {
+    for (uint32_t i = 0; i < vertices.size(); i++) {
         vertices[i].position = vertices[i].position + center;
         vertices[i].position = vertices[i].position * vec;
     }
@@ -49,7 +49,7 @@ Mesh Mesh::construct_bounding_box() {
 
 static void process_mesh(aiMesh *mesh, Mesh &mymesh) {
     mymesh.vertices.reserve(mesh->mNumVertices + 1);
-    for (uint64_t i = 0; i < mesh->mNumVertices; i++) {
+    for (uint32_t i = 0; i < mesh->mNumVertices; i++) {
         const auto vec = mesh->mVertices[i];
 
         mymesh.bounding_box.max.x = glm::max(vec.x, mymesh.bounding_box.max.x);
@@ -72,7 +72,7 @@ static void process_mesh(aiMesh *mesh, Mesh &mymesh) {
     mymesh.center /= (float)mymesh.vertices.size();
 
     mymesh.faces.reserve(mesh->mNumFaces * 3 + 1);
-    for (uint64_t i = 0; i < mesh->mNumFaces; i++) {
+    for (uint32_t i = 0; i < mesh->mNumFaces; i++) {
         aiFace face = mesh->mFaces[i];
         assert(face.mNumIndices == 3);
         mymesh.faces.push_back(face.mIndices[0]);
@@ -80,10 +80,10 @@ static void process_mesh(aiMesh *mesh, Mesh &mymesh) {
         mymesh.faces.push_back(face.mIndices[2]);
     }
 
-    uint64_t idx = 0;
+    uint32_t idx = 0;
     // calculating vertex normals
     glm::vec3 A, B, C, normal;
-    for (uint64_t i = 0; i < mymesh.faces.size(); i += 3) {
+    for (uint32_t i = 0; i < mymesh.faces.size(); i += 3) {
         A = mymesh.vertices[mymesh.faces[i + 0]].position;
         B = mymesh.vertices[mymesh.faces[i + 1]].position;
         C = mymesh.vertices[mymesh.faces[i + 2]].position;
@@ -202,7 +202,7 @@ Mesh Mesh::rotate(float angle, glm::vec3 axis) {
 glm::mat4 Mesh::get_model_matrix() { return model_matrix; }
 
 std::array<glm::vec3, 3> Mesh::get_triangle_vertices(Triangle &tri) const {
-    uint64_t v1_idx = tri.first_vertex_idx;
+    uint32_t v1_idx = tri.first_vertex_idx;
     return {vertices[v1_idx + 0].position, vertices[v1_idx + 1].position,
             vertices[v1_idx + 2].position};
 }

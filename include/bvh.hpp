@@ -26,6 +26,6 @@ struct Ray {
 Ray mouse_to_object_space(glm::vec2 mouse, glm::vec4 viewport,
                           glm::mat4 &view_model, glm::mat4 &proj);
 
-std::optional<uint64_t> check_intersection(glm::vec2 mouse, glm::vec4 viewport,
+std::optional<uint32_t> check_intersection(glm::vec2 mouse, glm::vec4 viewport,
                                            Mesh &mesh, glm::mat4 &view_matrix,
                                            glm::mat4 &proj);
