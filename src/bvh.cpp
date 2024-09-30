@@ -150,13 +150,10 @@ std::optional<uint64_t> check_intersection(glm::vec2 mouse, glm::vec4 viewport,
     if (!ray.intersects_aabb(mesh.bounding_box).has_value()) {
         return std::nullopt;
     }
-    uint64_t idx = 0;
     for (auto &triangle : mesh.triangles) {
         if (ray.intersects_triangle(mesh, triangle).has_value()) {
-            std::cout << "done" << std::endl;
-            return idx;
+            return triangle.id;
         }
-        idx++;
     }
     return std::nullopt;
 }
