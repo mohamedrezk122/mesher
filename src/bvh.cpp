@@ -21,8 +21,8 @@ Ray mouse_to_object_space(glm::vec2 mouse, glm::vec4 viewport,
 }
 
 // Möller–Trumbore intersection algorithm
-std::optional<float> Ray::intersects_triangle(const Mesh &mesh, Triangle &tri) {
-    auto [v1, v2, v3] = mesh.get_triangle_vertices(tri);
+std::optional<float> Ray::intersects_triangle(Mesh *mesh, Triangle &tri) {
+    auto [v1, v2, v3] = mesh->get_triangle_vertices(tri);
     glm::vec3 edge1 = v2 - v1;
     glm::vec3 edge2 = v3 - v1;
     // the following two operation is the scalar triple product
@@ -141,20 +141,114 @@ std::optional<float> Ray::intersects_aabb_vectorized(const AABB &box) {
 
 */
 std::optional<uint32_t> check_intersection(glm::vec2 mouse, glm::vec4 viewport,
-                                           Mesh &mesh, glm::mat4 &view_matrix,
+                                           BVH &bvh, glm::mat4 &view_matrix,
                                            glm::mat4 &proj) {
 
-    glm::mat4 view_model = view_matrix * mesh.model_matrix;
+    glm::mat4 view_model = view_matrix * bvh.mesh->model_matrix;
     Ray ray = mouse_to_object_space(mouse, viewport, view_model, proj);
-    // check if the ray hits the mesh bounding box, if not do an early exit
-    if (!ray.intersects_aabb(mesh.bounding_box).has_value()) {
-        return std::nullopt;
-    }
-    for (auto &triangle : mesh.triangles) {
-        if (ray.intersects_triangle(mesh, triangle).has_value()) {
-            return triangle.id;
-        }
-    }
-    return std::nullopt;
+    return ray.intersects_bvh(bvh);
 }
 
+
+BVH::BVH(Mesh &_mesh){
+    mesh = &_mesh;
+    tris = std::vector<uint32_t>(mesh->triangles.size());
+    std::iota(tris.begin(), tris.end(), 0);
+    nodes.reserve(2 * mesh->triangles.size() - 1);
+    std::fill(nodes.begin(), nodes.end(), BVHNode());
+    nodes[0].left = 0;
+    nodes[0].first_prim_idx = 0;
+    nodes[0].prim_count = tris.size();
+    nodes[0].box = mesh->bounding_box;
+    subdivide_primitives(0);
+}
+
+void BVH::update_bounds(uint32_t node_idx){
+    BVHNode& node = nodes[node_idx];
+    for(uint32_t i = 0; i < node.prim_count; i++){
+        for(auto& v: mesh->get_triangle_vertices(get_triangle(i + node.first_prim_idx))){
+            node.box.max.x = glm::max(v.x, node.box.max.x);
+            node.box.max.y = glm::max(v.y, node.box.max.y);
+            node.box.max.z = glm::max(v.z, node.box.max.z);
+
+            node.box.min.x = glm::min(v.x, node.box.min.x);
+            node.box.min.y = glm::min(v.y, node.box.min.y);
+            node.box.min.z = glm::min(v.z, node.box.min.z);
+        }
+    }
+}
+
+void BVH::subdivide_primitives(uint32_t node_idx){
+    BVHNode& node = nodes[node_idx];
+    if(node.prim_count <= 2)
+        return;
+    // compute the longest axis to split at
+    glm::vec3 diff = node.box.max - node.box.min;
+    int axis = 0; // x-axis
+    if(diff.y > diff.x)
+        axis = 1; // y-axis
+    if(diff.z > diff[axis])
+        axis = 2; // z-axis
+    float split =  node.box.min[axis] + 0.5f * diff[axis];
+
+    // we move all the triangles the are left to split pos to left of the array
+    // and triangles that are right to the split pos to the right of the array
+    int i = node.first_prim_idx;
+    int j = i + node.prim_count - 1;
+    while(i <= j){
+        if(mesh->triangles[tris[i]].centroid[axis] < split)
+            i++;
+        else 
+            std::swap(tris[i], tris[j--]);
+    }
+
+    uint32_t left_count = i - node.first_prim_idx;
+    // one of the splits is empty
+    if (left_count == node.prim_count || left_count == 0)
+        return; 
+
+    uint32_t left_idx = counter++;
+    uint32_t right_idx = counter++;
+
+    nodes[left_idx].first_prim_idx = node.first_prim_idx;
+    nodes[left_idx].prim_count = left_count;
+
+    nodes[right_idx].first_prim_idx = i;
+    nodes[right_idx].prim_count = node.prim_count - left_count;
+
+    node.prim_count = 0;
+    node.left = left_idx;
+
+    update_bounds(left_idx);
+    update_bounds(right_idx);
+
+    subdivide_primitives(left_idx);
+    subdivide_primitives(right_idx);
+}
+
+
+std::optional<uint32_t> Ray::intersects_bvh(BVH &bvh){
+    return intersects_bvh_internal(bvh, 0);
+}
+
+std::optional<uint32_t> Ray::intersects_bvh_internal(BVH &bvh, uint32_t idx){
+    BVHNode& node = bvh.get_node(idx);
+
+    if(!intersects_aabb(node.box).has_value())
+        return std::nullopt;
+
+    if(node.isleaf()){
+        for(uint32_t i = 0; i < node.prim_count ; i++){
+            Triangle & tri =  bvh.get_triangle(node.first_prim_idx + i);
+            auto opt = intersects_triangle(bvh.mesh, tri);
+            if(opt.has_value()){
+                return tri.id;
+            }
+        }
+        return std::nullopt;
+    }
+    auto opt = intersects_bvh_internal(bvh, node.left);
+    if(opt.has_value())
+        return opt;
+    return intersects_bvh_internal(bvh, node.left + 1);
+}
