@@ -4,10 +4,13 @@ Mesh Mesh::highlight_triangle(uint32_t tri_idx) {
     Triangle &tri = triangles[tri_idx];
     glm::vec4 color{1.0f, 0.0f, 0.0f, 1.0f};
     std::vector<Mesh::Vertex> vertices;
-    for (auto &v : get_triangle_vertices(tri)) {
+    auto [v1, v2, v3] = get_triangle_vertices(tri); 
+    glm::vec3 normal = glm::cross(v2-v1, v3-v1); 
+    for (auto &v : {v1, v2, v3}) {
+        // TODO: handle normals that point inside the mesh
         // offseting the trinagle vertices (z-buffer)
-        glm::vec3 vv = v + tri.normal * 0.5f;
-        vertices.push_back(Mesh::Vertex{vv, color, tri.normal});
+        glm::vec3 vv = v + normal * 0.5f;
+        vertices.push_back(Mesh::Vertex{vv, color, normal});
     }
     std::vector<GLuint> indices{0, 2, 1};
     return Mesh(vertices, indices);
@@ -38,7 +41,7 @@ Mesh Mesh::construct_bounding_box() {
     }
     glm::vec3 vec = glm::abs(box.max - box.min) * 0.5f;
     for (uint32_t i = 0; i < vertices.size(); i++) {
-        vertices[i].position = vertices[i].position + center;
+        // vertices[i].position = vertices[i].position + 1.5f * center;
         vertices[i].position = vertices[i].position * vec;
     }
     // box_mesh = box_mesh.scale(glm::abs(box.max-box.min));
@@ -89,7 +92,8 @@ static void process_mesh(aiMesh *mesh, Mesh &mymesh) {
         C = mymesh.vertices[mymesh.faces[i + 2]].position;
         normal = glm::cross(B - A, C - A);
 
-        mymesh.triangles.push_back(Triangle{idx++, mymesh.faces[i], normal});
+        glm::vec3 centroid = 0.03333f * (A + B + C);
+        mymesh.triangles.push_back(Triangle{idx++, mymesh.faces[i], centroid});
 
         mymesh.vertices[mymesh.faces[i + 0]].normal += normal;
         mymesh.vertices[mymesh.faces[i + 1]].normal += normal;

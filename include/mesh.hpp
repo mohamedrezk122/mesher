@@ -25,7 +25,7 @@ struct Triangle {
     // index to Vertex in vertices
     uint64_t id;
     uint64_t first_vertex_idx;
-    glm::vec3 normal;
+    glm::vec3 centroid;
 };
 
 class Mesh {
