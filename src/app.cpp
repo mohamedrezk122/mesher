@@ -27,6 +27,7 @@ Context ctx;
 
 Shader shader;
 Mesh mesh, mesh_box, triangle;
+BVH bvh;
 Camera camera(glm::vec3(1.0f, 2.0f, 2.0f), // pos of camera
               glm::vec3(0.0f, 0.0f, 0.0f)  // where camera is looking
 );
@@ -76,6 +77,7 @@ void handle_input() {
         } else if (event.type == SDL_DROPFILE) {
             std::cout << event.drop.file << std::endl;
             mesh = Mesh(std::string(event.drop.file));
+            bvh = BVH(mesh);
         } else if (event.type == SDL_KEYDOWN) {
             camera.handle_key_action(event.key.keysym.sym, 0.05f);
         } else if (event.type == SDL_MOUSEBUTTONUP ||
@@ -95,7 +97,7 @@ void handle_input() {
             steady_clock::time_point begin = steady_clock::now();
             auto triangle_opt =
                 check_intersection(glm::vec2(event.motion.x, event.motion.y),
-                                   ctx.get_viewport(), mesh, VIEW, PROJ);
+                                   ctx.get_viewport(), bvh, VIEW, PROJ);
             if (triangle_opt.has_value()) {
                 triangle = mesh.highlight_triangle(triangle_opt.value());
             }
@@ -155,7 +157,7 @@ void main_loop() {
         pre_draw();
         mesh.draw(shader);
         triangle.draw(shader);
-        // mesh_box.draw(shader);
+        mesh_box.draw(shader);
         SDL_GL_SwapWindow(ctx.window);
         // print FPS every every 5 rounds
         // if (count == 5){
@@ -173,6 +175,8 @@ int main(int argc, char *argv[]) {
     // read files from command line
     if (argc > 1) {
         mesh = Mesh(std::string(argv[1]));
+        mesh_box = mesh.construct_bounding_box();
+        bvh = BVH(mesh);
         std::cout << mesh.triangles.size() << std::endl;
     }
     main_loop();
