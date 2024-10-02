@@ -17,8 +17,8 @@
 
 // axis-aligned bounding box
 struct AABB {
-    glm::vec3 max;
-    glm::vec3 min;
+    glm::vec3 max{-1e30f};
+    glm::vec3 min{1e30f};
 };
 
 struct Triangle {
@@ -42,7 +42,7 @@ class Mesh {
     std::vector<GLuint> faces;
     // initialize with identity
     glm::mat4 model_matrix{1.0f};
-    AABB bounding_box{glm::vec3(0.0f), glm::vec3(0.0f)};
+    AABB bounding_box;
 
     // constructors
     Mesh(std::vector<Vertex> _vertices, std::vector<GLuint> faces);
