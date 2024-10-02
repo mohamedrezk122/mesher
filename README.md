@@ -2,6 +2,10 @@
 
 ![](assets/pic.png)
 
+## BVH for triangle selection
+
+![](assets/selection.png)
+
 ## Installation
 Make sure you have the following installed
 - `ASSIMP`
