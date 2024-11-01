@@ -45,8 +45,6 @@ struct Ray {
     glm::vec3 origin;
     // unit vector
     glm::vec3 dir;
-    // at which distance the ray hit an object along `dir`
-    float t = 1e30;
     // constructors
     Ray(glm::vec3 &pos, glm::vec3 &target);
     Ray() = default;
