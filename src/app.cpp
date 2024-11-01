@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <iostream>
 #include <string>
+#include <unordered_set>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_events.h>
@@ -26,7 +27,10 @@ const fs::path ROOT = this_filepath.parent_path().parent_path();
 Context ctx;
 
 Shader shader;
-Mesh mesh, mesh_box, triangle;
+std::vector<Mesh> triangles;
+// prune duplicates from selected triangles 
+std::unordered_set<uint32_t> tris_idxs; 
+
 BVH bvh;
 Camera camera(glm::vec3(1.0f, 2.0f, 2.0f), // pos of camera
               glm::vec3(0.0f, 0.0f, 0.0f)  // where camera is looking
@@ -79,6 +83,11 @@ void handle_input() {
             mesh = Mesh(std::string(event.drop.file));
             bvh = BVH(mesh);
         } else if (event.type == SDL_KEYDOWN) {
+            if(event.key.keysym.sym == SDLK_q){
+                triangles.clear();
+                tris_idxs.clear();
+                continue;
+            }
             camera.handle_key_action(event.key.keysym.sym, 0.05f);
         } else if (event.type == SDL_MOUSEBUTTONUP ||
                    event.type == SDL_MOUSEBUTTONDOWN) {
@@ -94,17 +103,16 @@ void handle_input() {
                 camera.handle_mouse_action(xpos, ypos);
                 continue;
             }
-            steady_clock::time_point begin = steady_clock::now();
             auto triangle_opt =
                 check_intersection(glm::vec2(event.motion.x, event.motion.y),
                                    ctx.get_viewport(), bvh, VIEW, PROJ);
             if (triangle_opt.has_value()) {
-                triangle = mesh.highlight_triangle(triangle_opt.value());
+                uint32_t idx = triangle_opt.value();
+                if (tris_idxs.find(idx) == tris_idxs.end()){
+                    triangles.push_back(mesh.highlight_triangle(idx));
+                    tris_idxs.insert(idx);
+                }
             }
-            steady_clock::time_point end = steady_clock::now();
-            std::cout << "Took: "
-                      << duration_cast<microseconds>(end - begin).count()
-                      << "[us]" << std::endl;
         }
     }
 }
@@ -156,8 +164,8 @@ void main_loop() {
         handle_input();
         pre_draw();
         mesh.draw(shader);
-        triangle.draw(shader);
-        mesh_box.draw(shader);
+        for(auto& tri: triangles)
+            tri.draw(shader);
         SDL_GL_SwapWindow(ctx.window);
         // print FPS every every 5 rounds
         // if (count == 5){
