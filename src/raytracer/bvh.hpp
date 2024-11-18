@@ -4,9 +4,8 @@
 #include <glm/ext.hpp>
 #include <glm/vec3.hpp>
 #include <optional>
-#include <numeric>
 
-#include "mesh.hpp"
+#include "../mesh.hpp"
 
 
 struct BVHNode {

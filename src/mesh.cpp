@@ -1,14 +1,20 @@
-#include "../include/mesh.hpp"
+#include <iostream>
+
+#include "mesh.hpp"
 
 Mesh Mesh::highlight_triangle(uint32_t tri_idx) {
     Triangle &tri = triangles[tri_idx];
     glm::vec4 color{1.0f, 0.0f, 0.0f, 1.0f};
     std::vector<Mesh::Vertex> vertices;
     auto [v1, v2, v3] = get_triangle_vertices(tri); 
+    // glm::vec3 normal = glm::normalize(glm::cross(v2-v1, v3-v1)); 
     glm::vec3 normal = glm::cross(v2-v1, v3-v1); 
     for (auto &v : {v1, v2, v3}) {
         // TODO: handle normals that point inside the mesh
         // offseting the trinagle vertices (z-buffer)
+        // float x = glm::dot(tri.centroid, normal);
+        // if(x < 0)
+        //     normal = -1.0f * normal;
         glm::vec3 vv = v + normal * 0.5f;
         vertices.push_back(Mesh::Vertex{vv, color, normal});
     }
@@ -81,6 +87,11 @@ static void process_mesh(aiMesh *mesh, Mesh &mymesh) {
         mymesh.faces.push_back(face.mIndices[0]);
         mymesh.faces.push_back(face.mIndices[1]);
         mymesh.faces.push_back(face.mIndices[2]);
+
+        std::cout << face.mIndices[0] << " "
+                  << face.mIndices[1] << " "
+                  << face.mIndices[2] << " "
+                  << std::endl;
     }
 
     uint32_t idx = 0;

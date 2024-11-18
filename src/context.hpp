@@ -3,12 +3,10 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_video.h>
 #include <cassert>
-#include <cstdint>
-#include <cstdio>
 #include <glm/vec4.hpp>
 #include <iostream>
 
-#include "glad.h"
+#include "../include/glad.h"
 
 class Context {
   private:

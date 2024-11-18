@@ -1,4 +1,7 @@
-#include "../include/shader.hpp"
+#include <fstream>
+#include <iostream>
+
+#include "shader.hpp"
 
 std::string Shader::read_shader_from_file(const char *filepath) {
     std::fstream file(filepath, std::fstream::in);

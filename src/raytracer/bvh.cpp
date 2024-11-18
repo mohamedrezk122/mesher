@@ -1,6 +1,7 @@
+#include <numeric>
 #include <cfloat>
 
-#include "../include/bvh.hpp"
+#include "bvh.hpp"
 
 constexpr float EPSILON = std::numeric_limits<float>::epsilon();
 
@@ -233,7 +234,6 @@ std::optional<uint32_t> Ray::intersects_bvh(BVH &bvh){
 
 std::optional<uint32_t> Ray::intersects_bvh_internal(BVH &bvh, uint32_t idx){
     BVHNode& node = bvh.get_node(idx);
-
     if(!intersects_aabb(node.box).has_value())
         return std::nullopt;
 
@@ -247,6 +247,7 @@ std::optional<uint32_t> Ray::intersects_bvh_internal(BVH &bvh, uint32_t idx){
         }
         return std::nullopt;
     }
+    // TODO: test against the bounding box of each and pick the nearest 
     auto opt = intersects_bvh_internal(bvh, node.left);
     if(opt.has_value())
         return opt;

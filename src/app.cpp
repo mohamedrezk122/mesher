@@ -12,12 +12,12 @@
 #include <glm/ext.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "../include/bvh.hpp"
-#include "../include/camera.hpp"
-#include "../include/context.hpp"
+#include "raytracer/bvh.hpp"
+#include "renderer/camera.hpp"
+#include "renderer/shader.hpp"
+#include "context.hpp"
+#include "mesh.hpp"
 #include "../include/glad.h"
-#include "../include/mesh.hpp"
-#include "../include/shader.hpp"
 
 namespace fs = std::filesystem;
 
@@ -27,6 +27,7 @@ const fs::path ROOT = this_filepath.parent_path().parent_path();
 Context ctx;
 
 Shader shader;
+Mesh mesh, mesh_box;
 std::vector<Mesh> triangles;
 // prune duplicates from selected triangles 
 std::unordered_set<uint32_t> tris_idxs; 
@@ -103,6 +104,7 @@ void handle_input() {
                 camera.handle_mouse_action(xpos, ypos);
                 continue;
             }
+            // steady_clock::time_point begin = steady_clock::now();
             auto triangle_opt =
                 check_intersection(glm::vec2(event.motion.x, event.motion.y),
                                    ctx.get_viewport(), bvh, VIEW, PROJ);
@@ -113,6 +115,10 @@ void handle_input() {
                     tris_idxs.insert(idx);
                 }
             }
+            // steady_clock::time_point end = steady_clock::now();
+            // std::cout << "Took: "
+            //           << duration_cast<microseconds>(end - begin).count()
+            //           << "[us]" << std::endl;
         }
     }
 }
@@ -156,35 +162,43 @@ void pre_draw() {
 }
 
 void main_loop() {
-    // uint64_t start, end, count = 0;
-    // float elapsed;
+    uint64_t start, end, count = 0;
+    float elapsed;
     // mesh_box = Mesh_bounding_box(mesh);
     while (!ctx.is_quit) {
-        // start = SDL_GetPerformanceCounter();
+        start = SDL_GetPerformanceCounter();
         handle_input();
         pre_draw();
         mesh.draw(shader);
         for(auto& tri: triangles)
             tri.draw(shader);
+        // mesh_box.draw(shader);
         SDL_GL_SwapWindow(ctx.window);
         // print FPS every every 5 rounds
-        // if (count == 5){
-        //     end = SDL_GetPerformanceCounter();
-        //     elapsed = (end-start)/ (float) SDL_GetPerformanceFrequency();
-        //     // std::cout << "FPS: "<< std::to_string(1.0f/elapsed) <<
-        //     std::endl; count = 0;
-        // }
-        // count += 1;
+        if (count == 5){
+            end = SDL_GetPerformanceCounter();
+            elapsed = (end-start)/ (float) SDL_GetPerformanceFrequency();
+            // std::cout << "FPS: "<< std::to_string(1.0f/elapsed) <<
+            // std::endl; 
+            count = 0;
+        }
+        count += 1;
     }
 }
 
 int main(int argc, char *argv[]) {
+    using namespace std::chrono;
     initialize_program();
     // read files from command line
     if (argc > 1) {
         mesh = Mesh(std::string(argv[1]));
         mesh_box = mesh.construct_bounding_box();
+        steady_clock::time_point begin = steady_clock::now();
         bvh = BVH(mesh);
+        steady_clock::time_point end = steady_clock::now();
+        std::cout << "BVH Construction for " << mesh.triangles.size() << " triangles " 
+                      << duration_cast<microseconds>(end - begin).count()
+                      << "[us]" << std::endl;
         std::cout << mesh.triangles.size() << std::endl;
     }
     main_loop();

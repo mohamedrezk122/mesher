@@ -12,8 +12,8 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#include "glad.h"
-#include "shader.hpp"
+#include "../include/glad.h"
+#include "./renderer/shader.hpp"
 
 // axis-aligned bounding box
 struct AABB {

@@ -1,12 +1,10 @@
 #pragma once
 
-#include <fstream>
-#include <iostream>
 #include <string>
 
 #include <glm/mat4x4.hpp>
 
-#include "glad.h"
+#include "../../include/glad.h"
 
 class Shader {
   public:
