@@ -1,7 +1,10 @@
+#include <cmath>
 #include <numeric>
 #include <cfloat>
+#include <iostream>
 
 #include "bvh.hpp"
+#include "../utils.hpp"
 
 constexpr float EPSILON = std::numeric_limits<float>::epsilon();
 
@@ -113,6 +116,15 @@ std::optional<float> Ray::intersects_aabb(const AABB &box) {
     return t_near;
 }
 
+float Ray::dist_to_aabb(const AABB& box){
+    auto opt = intersects_aabb(box);
+    if(opt.has_value()){
+        return opt.value();
+    }
+    return INFINITY;
+}
+
+
 // vectorized version takes around 2-5 microseconds, slower than the previous
 // version, maybe the rcp function is slower
 std::optional<float> Ray::intersects_aabb_vectorized(const AABB &box) {
@@ -191,22 +203,25 @@ void BVH::subdivide_primitives(uint32_t node_idx){
     if(diff.z > diff[axis])
         axis = 2; // z-axis
     float split =  node.box.min[axis] + 0.5f * diff[axis];
-
     // we move all the triangles the are left to split pos to left of the array
     // and triangles that are right to the split pos to the right of the array
     int i = node.first_prim_idx;
     int j = i + node.prim_count - 1;
     while(i <= j){
-        if(mesh->triangles[tris[i]].centroid[axis] < split)
+        auto centroid = mesh->triangles[tris[i]].centroid[axis];
+        if( centroid < split){
             i++;
-        else 
+        } else {
             std::swap(tris[i], tris[j--]);
+        }
     }
 
     uint32_t left_count = i - node.first_prim_idx;
     // one of the splits is empty
-    if (left_count == node.prim_count || left_count == 0)
+    if (left_count == node.prim_count || left_count == 0){
+        LOG(node.prim_count);
         return; 
+    }
 
     uint32_t left_idx = counter++;
     uint32_t right_idx = counter++;
@@ -233,23 +248,35 @@ std::optional<uint32_t> Ray::intersects_bvh(BVH &bvh){
 }
 
 std::optional<uint32_t> Ray::intersects_bvh_internal(BVH &bvh, uint32_t idx){
+    static int count = 0;
+    count ++;
     BVHNode& node = bvh.get_node(idx);
     if(!intersects_aabb(node.box).has_value())
         return std::nullopt;
 
     if(node.isleaf()){
         for(uint32_t i = 0; i < node.prim_count ; i++){
+            LOG(node.prim_count);
             Triangle & tri =  bvh.get_triangle(node.first_prim_idx + i);
             auto opt = intersects_triangle(bvh.mesh, tri);
             if(opt.has_value()){
+                LOG(count);
+                count = 0;
                 return tri.id;
             }
         }
+        // LOG(count);
+        count = 0;
         return std::nullopt;
     }
-    // TODO: test against the bounding box of each and pick the nearest 
-    auto opt = intersects_bvh_internal(bvh, node.left);
-    if(opt.has_value())
-        return opt;
+    float left_dist = dist_to_aabb(bvh.get_node(node.left).box);
+    float right_dist = dist_to_aabb(bvh.get_node(node.left + 1).box);
+    // if (left_dist < right_dist){
+        auto opt = intersects_bvh_internal(bvh, node.left);
+        if(opt.has_value()){
+            return opt;
+        }
+    // }
+    // fallback to right node if no intersection found in the left one
     return intersects_bvh_internal(bvh, node.left + 1);
 }

@@ -53,6 +53,9 @@ struct Ray {
     std::optional<float> intersects_aabb_vectorized(const AABB &box);
     std::optional<float> intersects_aabb(const AABB &box);
     std::optional<uint32_t> intersects_bvh(BVH &bvh);
+    // distance computation
+    float dist_to_aabb(const AABB &box);
+    
 private:
     std::optional<uint32_t> intersects_bvh_internal(BVH &bvh, uint32_t idx);
 };
