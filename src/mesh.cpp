@@ -88,10 +88,10 @@ static void process_mesh(aiMesh *mesh, Mesh &mymesh) {
         mymesh.faces.push_back(face.mIndices[1]);
         mymesh.faces.push_back(face.mIndices[2]);
 
-        std::cout << face.mIndices[0] << " "
-                  << face.mIndices[1] << " "
-                  << face.mIndices[2] << " "
-                  << std::endl;
+        // std::cout << face.mIndices[0] << " "
+        //           << face.mIndices[1] << " "
+        //           << face.mIndices[2] << " "
+        //           << std::endl;
     }
 
     uint32_t idx = 0;
@@ -103,7 +103,7 @@ static void process_mesh(aiMesh *mesh, Mesh &mymesh) {
         C = mymesh.vertices[mymesh.faces[i + 2]].position;
         normal = glm::cross(B - A, C - A);
 
-        glm::vec3 centroid = 0.03333f * (A + B + C);
+        glm::vec3 centroid = 0.3333f * (A + B + C);
         mymesh.triangles.push_back(Triangle{idx++, mymesh.faces[i], centroid});
 
         mymesh.vertices[mymesh.faces[i + 0]].normal += normal;
